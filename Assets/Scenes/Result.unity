@@ -1132,13 +1132,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44463ec21409d9e4fac593785794eab1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  camPos:
-  - {fileID: 1559989266}
-  - {fileID: 290408406}
-  - {fileID: 1831038955}
-  - {fileID: 1915286752}
-  backImage: {fileID: 1789143158}
-  buttonText: {fileID: 965339261}
 --- !u!82 &600496534
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1935,7 +1928,7 @@ MonoBehaviour:
       m_Calls: []
     m_TypeName: UnityEngine.UI.MaskableGraphic+CullStateChangedEvent, UnityEngine.UI,
       Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-  m_Sprite: {fileID: 21300000, guid: 21487c4048c024c4ea0b246098c335be, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 631641c61198a3948b40fce0d21d974e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

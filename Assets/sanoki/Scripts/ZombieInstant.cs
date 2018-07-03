@@ -105,7 +105,6 @@ public class ZombieInstant : MonoBehaviour {
             ParticleSwitch();
             crowns[SortArray(score, playerID, true)[0]].SetActive(true);
             Invoke("ParticleSwitch", 1.0f);
-            FindObjectOfType<ResultCam_sanoki>().camMove(maxScore);
         }
         else if(SortArray(score, playerID, false)[0] == SortArray(score, playerID, false)[1])
         {

@@ -158,6 +158,8 @@ public class AreaSystem : MonoBehaviour
                 yield return new WaitWhile(() => timer >= 0);
             }
         }
+        flowtext.GameFinish = true;
+        yield return new WaitForSeconds(1f);
         //リザルトへ
         GameObject.Find("Canvas").GetComponent<SceneFader_sanoki>().StageSelect(sceneName);
     }

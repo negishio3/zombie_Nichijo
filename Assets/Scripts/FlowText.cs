@@ -8,7 +8,8 @@ public class FlowText : MonoBehaviour {
     {
         STATEPOSITION,
         FLOWMOVING,
-        STOPMOVE
+        STOPMOVE,
+        FINISH
     }
     FlowState flowState;
 
@@ -17,12 +18,14 @@ public class FlowText : MonoBehaviour {
     private int wave=1;   //現在のウェーブ
     private float speed=12f;
 
-    public bool ChangeWave { get; set; }
-    public bool WaveFinish { get; set; }
+    public bool ChangeWave { get; set; }//waveがはじまったか
+    public bool WaveFinish { get; set; }//waveがおわったか
+    public bool GameFinish { get; set; }//ゲームが終わったか
 
     void Start() {
         rect = GetComponent<RectTransform>();
         text = GetComponent<Text>();
+        //初期位置に移動
         rect.localPosition = new Vector3(550f, 0, 0);
     }
 
@@ -39,12 +42,15 @@ public class FlowText : MonoBehaviour {
             case FlowState.STOPMOVE:
                 StopMove();
                 break;
+            case FlowState.FINISH:
+                Finish();
+                break;
         }
     }
 
     void StatePosition()
     {
-        //初期位置移動処理
+        //初期位置処理
         flowState = FlowState.FLOWMOVING;
         ChangeWave = false;
         text.text = "WAVE" + wave.ToString();
@@ -54,14 +60,17 @@ public class FlowText : MonoBehaviour {
     {
         //右から左へ流れる
         rect.localPosition -= new Vector3(Mathf.Abs(speed), 0, 0);
+        //中心付近で原則
         if (rect.localPosition.x > -100 && rect.localPosition.x < 100)
         {
             speed = 5f;
         }
+        //-550以降まで流れないように
         else if (rect.localPosition.x < -550)
         {
             flowState = FlowState.STOPMOVE;
         }
+        //基本速度
         else
         {
             speed = 12f;
@@ -70,18 +79,34 @@ public class FlowText : MonoBehaviour {
 
     void StopMove()
     {
-        rect.localPosition = new Vector3(550f, 0, 0);
         //流れた後の待機処理
-        if (WaveFinish)
+        //初期位置に戻る
+        rect.localPosition = new Vector3(550f, 0, 0);
+
+        //ゲームが終わったか
+        if (GameFinish)
+        {
+            flowState = FlowState.FINISH;
+        }
+        //1Waveが終わったか
+        else if (WaveFinish)
         {
             flowState = FlowState.FLOWMOVING;
             WaveFinish = false;
             text.text = "NEXT";
         }
-        if (ChangeWave)
+        //Waveが始まったか
+        else if (ChangeWave)
         {
             flowState = FlowState.STATEPOSITION;
             wave++;
         }
+
+    }
+
+    void Finish()
+    {
+        text.text = "FINISH";
+        rect.localPosition = new Vector3(0f, 0, 0);
     }
 }

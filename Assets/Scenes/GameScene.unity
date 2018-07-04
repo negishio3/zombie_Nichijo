@@ -7133,8 +7133,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7db5bfe5d22f8c848a40dba6e96586b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  changeTime: 45
-  nextTime: 15
+  changeTime: 2
+  nextTime: 2
   PlayerList:
   - {fileID: 1874153863612752, guid: 522ff6bfe08b60443907dad7f5f2d980, type: 2}
   - {fileID: 1418627143791990, guid: 32bfb638f70ae8e4285bcf0a8337a457, type: 2}

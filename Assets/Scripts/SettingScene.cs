@@ -3,23 +3,63 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using UnityEngine.UI;
+using UnityEngine.Audio;
 
 public class SettingScene : MonoBehaviour {
-    public bool NowSetting { get; set; }//現在設定画面にいるか
 
-    private static float f_ItemTime=10;//アイテムの沸き間隔 
-    private static float f_AreaTime=45;//1つのエリアでの時間
-    private static float f_ChangeMoveTime=15;//エリア間の時間
-    private static int i_MobNumber=20;//沸くモブの数
-    private static int i_BGMVolume=50;//BGM音量
-    private static int i_SEVolume=50;//SE音量
+    //BGM、SEのAudioSourceのoutputにAudioMixerのBGMとSEを割り当てる
 
     [SerializeField]
     private Slider[] _slider=new Slider[6];
-    private List<GameObject> SettingObj=new List<GameObject>();
+    [SerializeField]
+    private Text[] _text = new Text[6];
+    [SerializeField]
+    private GameObject settingText;
+    [SerializeField]
+    private Image Cursor;
+    [SerializeField]
+    private AudioMixer audioMixer;
+
+    public static float f_ItemTime = 10;//アイテムの沸き間隔 
+    public static float f_AreaTime = 45;//1つのエリアでの時間
+    public static float f_ChangeMoveTime = 15;//エリア間の時間
+    public static int i_MobNumber = 20;//沸くモブの数
+    private int i_BGMVolume = 50;//BGM音量
+    private int i_SEVolume = 50;//SE音量
+
 
     private int settingSelect=1;
+    private int controlPlayerNum;//操作するプレイヤー
+
+    private const float cursorMoveTime=0.1f;//カーソルが再移動可能になるまでの時間
+    private const float sliderMoveTime = 0.06f;//スライダーがスライド可能になるまでの時間
+
     private bool selected;//その項目を選択
+    private bool slideCursor=true;//カーソルがスライド可能か
+    private bool slideSlider = true;//スライダーがスライド可能か
+    private bool isExecute;//コルーチンが実行中か
+
+    private RectTransform cursorRect;
+    private List<GameObject> SettingObj = new List<GameObject>();
+
+    public int I_BGMVolume
+    {
+        get { return i_BGMVolume; }
+        set { i_BGMVolume = value;
+            BGMSet();
+        }
+    }
+
+    public int I_SEVolume
+    {
+        get { return i_SEVolume; }
+        set { i_SEVolume = value;
+            SESet();
+        }
+    }
+
+
+    public bool NowSetting { get; set; }//現在設定画面にいるか
 
     public enum SettingType
     {
@@ -29,14 +69,17 @@ public class SettingScene : MonoBehaviour {
         CHANGEMOVETIME,
         MOBNUMBER,
         BGMVOLUME,
-        SEVOLUME
+        SEVOLUME,
+        BACK
     }
 
     private SettingType settingType;
 
 
 	void Start () {
+        SettingReset();
         SettingSlider();
+        cursorRect = Cursor.GetComponent<RectTransform>();
         foreach (Transform obj in gameObject.transform)
         {
             SettingObj.Add(obj.gameObject);
@@ -46,70 +89,143 @@ public class SettingScene : MonoBehaviour {
 
 
     void Update() {
-        if (Input.GetButtonDown("Setting"))
+        for (int i = 1; i < 5; i++)
         {
-            NowSetting = true;
-            foreach (GameObject obj in SettingObj)
+            if (Input.GetButtonDown("Setting"+i.ToString()))
             {
-                obj.SetActive(true);
+                controlPlayerNum = i;
+                NowSetting = true;
+                settingText.SetActive(false);
+                foreach (GameObject obj in SettingObj)
+                {
+                    obj.SetActive(true);
+                }
             }
         }
-        if (!selected)
+        if (NowSetting)
         {
-            settingType = SettingType.NOSELECT;
-            for (int i = 1; i < 5; i++)
+            TextUpdate();
+            ChoiceSelection();
+            if (!selected)
             {
+                settingType = SettingType.NOSELECT;
+
                 //決定
-                if (Input.GetButtonDown("Fire" + i.ToString()))
+                if (Input.GetButtonDown("Fire" + controlPlayerNum.ToString()))
                 {
                     selected = true;
-                    Select();
+                    ItoE();
                 }
-            }
 
-            for (int i = 1; i < 5; i++)
-            {
                 //選択を上下に移動
-                if (Input.GetAxis("VerticalL" + i.ToString()) >= 1 && settingSelect > 1)
+
+                if (Input.GetAxis("VerticalL" + controlPlayerNum.ToString()) >= 1&&slideCursor)
                 {
+                    slideCursor = false;
+                    StartCoroutine(CursorMoveTimeWait());
                     settingSelect--;
                 }
-                else if (Input.GetAxis("VerticalL" + i.ToString()) <= -1 && settingSelect < 6)
+                else if (Input.GetAxis("VerticalL" + controlPlayerNum.ToString()) <= -1&&slideCursor)
                 {
+                    slideCursor = false;
+                    StartCoroutine(CursorMoveTimeWait());
                     settingSelect++;
                 }
-            }
-
-            //設定画面を閉じる
-            for (int i = 1; i < 5; i++)
-            {
-                if (Input.GetButtonDown("Jump" + i.ToString()))
+                if (settingSelect <= 0)
                 {
-                    foreach (GameObject obj in SettingObj)
-                    {
-                        obj.SetActive(false);
-                    }
-                    NowSetting = false;
+                    settingSelect = 7;
+                }
+                else if (settingSelect >= 8)
+                {
+                    settingSelect = 1;
+                }
+
+                //設定画面を閉じる
+                if (Input.GetButtonDown("Jump" + controlPlayerNum.ToString()))
+                {
+                    BackSeting();
                 }
             }
-
-        }
-        if (selected)
-        {
-            SwitchSettingType();
+            if (selected)
+            {
+                SwitchSettingType();
+            }
         }
     }
-    void Select()
+
+    /// <summary>
+    /// Cursorの待ち時間処理
+    /// </summary>
+    /// <returns></returns>
+    IEnumerator CursorMoveTimeWait()
+    {
+        if (isExecute||slideCursor)
+        {
+            yield break;
+        }
+        isExecute = true;
+        yield return new WaitForSeconds(cursorMoveTime);
+        slideCursor = true;
+        isExecute = false;
+    }
+
+    /// <summary>
+    /// Sliderの待ち時間処理
+    /// </summary>
+    /// <returns></returns>
+    IEnumerator SliderMoveTimeWait()
+    {
+        if (isExecute || slideSlider)
+        {
+            yield break;
+        }
+        isExecute = true;
+        yield return new WaitForSeconds(cursorMoveTime);
+        slideSlider = true;
+        isExecute = false;
+    }
+
+    /// <summary>
+    /// settingTypeをsettingSelectの番号のものに変える
+    /// </summary>
+    void ItoE()
     {
         settingType = (SettingType)Enum.ToObject(typeof(SettingType), settingSelect);
     }
 
+
+    /// <summary>
+    /// カーソル処理
+    /// </summary>
     void ChoiceSelection()
     {
-        //選択している奴がわかりやすいかんじになる処理
+        if (settingType == SettingType.NOSELECT)
+        {
+            //「戻る」用処理
+            if (settingSelect == 7)
+            {
+                cursorRect.sizeDelta = new Vector2(100, 60);
+                cursorRect.position = new Vector3(50, 40, 0);
+            }
+            //「戻る」以外
+            else
+            {
+                cursorRect.sizeDelta = new Vector2(260, 50);
+                cursorRect.position = new Vector3(230, 420 - (settingSelect * 60), 0);
+            }
+        }
+        else
+        {
+            cursorRect.sizeDelta = new Vector2(350, 50);
+            cursorRect.position = new Vector3(545, 420 - (settingSelect*60),0);
+        }
 
     }
 
+
+    /// <summary>
+    /// SettingTypeの対象の処理を実行
+    /// </summary>
     void SwitchSettingType()
     {
         switch (settingType)
@@ -140,7 +256,55 @@ public class SettingScene : MonoBehaviour {
             case SettingType.SEVOLUME:
                 SliderControl(_slider[5]);
                 break;
+
+            case SettingType.BACK:
+                BackSeting();
+                break;
         }
+    }
+
+    /// <summary>
+    /// Textの内容を更新する
+    /// </summary>
+    void TextUpdate()
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            _text[i].text = _slider[i].value.ToString();
+        }
+    }
+
+    /// <summary>
+    /// AudioMixerのBGMに設定する
+    /// </summary>
+    void BGMSet()
+    {
+        audioMixer.SetFloat("BGM", i_BGMVolume-80);
+    }
+
+    /// <summary>
+    /// AudioMixerのSEに設定する
+    /// </summary>
+    void SESet()
+    {
+        audioMixer.SetFloat("SE", i_SEVolume-80);
+    }
+
+    /// <summary>
+    /// 設定画面を閉じる
+    /// </summary>
+    void BackSeting()
+    {
+        foreach (GameObject obj in SettingObj)
+        {
+            obj.SetActive(false);
+        }
+        settingSelect = 1;
+        settingType = SettingType.NOSELECT;
+        slideCursor = true;
+        selected = false;
+        NowSetting = false;
+        settingText.SetActive(true);
     }
 
     /// <summary>
@@ -151,12 +315,16 @@ public class SettingScene : MonoBehaviour {
     {
         for (int i = 1; i < 5; i++)
         {
-            if (Input.GetAxis("HorizontalL" + i.ToString()) > 0.9f)
+            if (Input.GetAxis("HorizontalL" + i.ToString()) > 0.6f&&slideSlider)
             {
+                slideSlider = false;
+                StartCoroutine(SliderMoveTimeWait());
                 c_slider.value++;
             }
-            else if (Input.GetAxis("HorizontalL" + i.ToString()) < -0.9f)
+            else if (Input.GetAxis("HorizontalL" + i.ToString()) < -0.6f&&slideSlider)
             {
+                slideSlider = false;
+                StartCoroutine(SliderMoveTimeWait());
                 c_slider.value--;
             }
         }
@@ -172,14 +340,17 @@ public class SettingScene : MonoBehaviour {
         }
     }
 
+    /// <summary>
+    /// 設定初期化
+    /// </summary>
     void SettingReset()
     {
         f_ItemTime = 10;
         f_AreaTime = 45;
         f_ChangeMoveTime = 15;
         i_MobNumber = 20;
-        i_BGMVolume = 50;
-        i_SEVolume = 50;
+        I_BGMVolume = 50;
+        I_SEVolume = 50;
     }
 
 
@@ -202,13 +373,25 @@ public class SettingScene : MonoBehaviour {
         _slider[4].maxValue = 100;
         _slider[5].maxValue = 100;
 
+
+        _slider[0].value = f_ItemTime;
+        _slider[1].value = f_AreaTime;
+        _slider[2].value = f_ChangeMoveTime;
+        _slider[3].value = i_MobNumber;
+        _slider[4].value = I_BGMVolume;
+        _slider[5].value = I_SEVolume;
+
         _slider[0].minValue = 5;
         _slider[1].minValue = 10;
         _slider[2].minValue = 3;
         _slider[3].minValue = 4;
         _slider[4].minValue = 0;
         _slider[5].minValue = 0;
+
     }
+
+
+    //以下スライダーアタッチ用
 
     void S_ItemTime(float value)
     {
@@ -232,11 +415,11 @@ public class SettingScene : MonoBehaviour {
 
     void S_BGMVolume(float value)
     {
-        i_BGMVolume = (int)value;
+        I_BGMVolume = (int)value;
     }
 
     void S_SEVolume(float value)
     {
-        i_SEVolume = (int)value;
+        I_SEVolume = (int)value;
     }
 }

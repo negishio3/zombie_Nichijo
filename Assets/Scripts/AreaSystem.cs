@@ -5,10 +5,10 @@ using UnityEngine.UI;
 
 public class AreaSystem : MonoBehaviour
 {
-    [SerializeField, Header("変更間隔")]
-    private float changeTime;
-    [SerializeField, Header("WAVE間の時間")]
-    private float nextTime;
+    //[SerializeField, Header("変更間隔")]
+    //private float changeTime;
+    //[SerializeField, Header("WAVE間の時間")]
+    //private float nextTime;
     [SerializeField, Header("プレイヤー")]
     private List<GameObject> PlayerList=new List<GameObject>();
     [SerializeField, Header("AIプレイヤー")]
@@ -29,7 +29,7 @@ public class AreaSystem : MonoBehaviour
 
     private float timer;//残り時間
 
-    private const int spcount = 20;//沸き数
+    //private const int spcount = 20;//沸き数
     private const int areDis = 8;//エリアの中心からの距離
 
     private int nowArea;
@@ -43,7 +43,7 @@ public class AreaSystem : MonoBehaviour
     {
         nowArea = 0;
         StartCoroutine(AreaEnumerator());
-        timer = changeTime+1;
+        timer = SettingScene.f_AreaTime+1;
         PlayerSpawn(AreaObject[0].transform.position);
         foreach (AIPlayer Aip in FindObjectsOfType<AIPlayer>())
         {
@@ -69,7 +69,10 @@ public class AreaSystem : MonoBehaviour
         }
     }
 
-
+    /// <summary>
+    /// エリアが終わった時の処理
+    /// </summary>
+    /// <param name="pos">エリアの場所</param>
     void AreaFinish(Vector3 pos)
     {
         foreach (AIPlayer Aip in FindObjectsOfType<AIPlayer>())
@@ -87,6 +90,11 @@ public class AreaSystem : MonoBehaviour
         MobChangeSystem.MobDelete();      
     }
 
+    /// <summary>
+    /// AREAが開始したとき実行
+    /// </summary>
+    /// <param name="pos">エリアの場所</param>
+    /// <returns></returns>
     IEnumerator AreaStart(Vector3 pos)
     {
         foreach (AIPlayer Aip in FindObjectsOfType<AIPlayer>())
@@ -99,7 +107,7 @@ public class AreaSystem : MonoBehaviour
         }
         Instantiate(spawnSmoke, pos+smoke_Offset, Quaternion.identity);
         yield return new WaitForSeconds(0.5f);
-        for (int i = 0; i < spcount; i++)
+        for (int i = 0; i < SettingScene.i_MobNumber; i++)
         {
             Vector3 spwpos;
             Quaternion qua = RandomQua();
@@ -108,6 +116,11 @@ public class AreaSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 沸く場所を取得する
+    /// </summary>
+    /// <param name="areapos">エリアの場所</param>
+    /// <param name="sppos">沸く場所</param>
     void MobSpawnPos(Vector3 areapos, out Vector3 sppos)
     {
         float x = 0, z = 0;
@@ -130,12 +143,16 @@ public class AreaSystem : MonoBehaviour
         sppos = new Vector3(x, 1.5f, z);
     }
 
+    /// <summary>
+    /// AREAの時間遷移等管理
+    /// </summary>
+    /// <returns></returns>
     IEnumerator AreaEnumerator()
     {
         for (int i = 0; i < 4; i++)
         {
             StartCoroutine(ItemCoroutine());
-            timer = changeTime + 1;
+            timer = SettingScene.f_AreaTime + 1;
 
             flowtext.ChangeWave = true;
             nowArea = i;                //アイテム処理で使用
@@ -153,7 +170,7 @@ public class AreaSystem : MonoBehaviour
             {
                 nowArea = i + 1;
                 AreaFinish(AreaObject[i + 1].transform.position);
-                timer = nextTime + 1;
+                timer = SettingScene.f_ChangeMoveTime + 1;
                 flowtext.WaveFinish = true;
                 yield return new WaitWhile(() => timer >= 0);
             }
@@ -164,6 +181,10 @@ public class AreaSystem : MonoBehaviour
         GameObject.Find("Canvas").GetComponent<SceneFader_sanoki>().StageSelect(sceneName);
     }
 
+    /// <summary>
+    /// Playerを沸かせる
+    /// </summary>
+    /// <param name="pos"></param>
     void PlayerSpawn(Vector3 pos)
     {
         for (int i = 0; i < 4; i++)
@@ -185,7 +206,10 @@ public class AreaSystem : MonoBehaviour
         }
     }
 
-
+    /// <summary>
+    /// ランダムで向きを取得
+    /// </summary>
+    /// <returns></returns>
     Quaternion RandomQua()
     {
         Quaternion qu;
@@ -194,12 +218,17 @@ public class AreaSystem : MonoBehaviour
         return qu;
     }
 
+
+    /// <summary>
+    /// 一定間隔でアイテムを作る
+    /// </summary>
+    /// <returns></returns>
     IEnumerator ItemCoroutine()
     {
         int item = 0;
         while (true)
         {
-            yield return new WaitForSeconds(11.25f);
+            yield return new WaitForSeconds(SettingScene.f_ItemTime);
             item = Random.Range(0, 2);
             if (item == 0)
             {
@@ -212,6 +241,10 @@ public class AreaSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// アイテムを作る
+    /// </summary>
+    /// <param name="item"></param>
     void ItemCreate(int item)
     {
         int Qx=0;

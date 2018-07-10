@@ -10,37 +10,43 @@ public class SettingScene : MonoBehaviour {
     //BGM、SEのAudioSourceのoutputにAudioMixerのBGMとSEを割り当てる
 
     [SerializeField]
-    private Slider[] _slider=new Slider[6];
+    private Slider[] _slider=new Slider[6];     //スライダー
     [SerializeField]
-    private Text[] _text = new Text[6];
+    private Text[] _text = new Text[6];         //スライダーの値用
     [SerializeField]
-    private GameObject settingText;
+    private RectTransform[] textRect=new RectTransform[7];             //文のrecttransform
     [SerializeField]
-    private Image Cursor;
+    private GameObject settingText;             //設定画面を開く誘導用text
     [SerializeField]
-    private AudioMixer audioMixer;
+    private Image Cursor;                       //カーソルのイメージ
+    [SerializeField]
+    private AudioMixer audioMixer;              //オーディオミキサー
 
-    public static float f_ItemTime = 10;//アイテムの沸き間隔 
-    public static float f_AreaTime = 45;//1つのエリアでの時間
-    public static float f_ChangeMoveTime = 15;//エリア間の時間
-    public static int i_MobNumber = 20;//沸くモブの数
-    private int i_BGMVolume = 50;//BGM音量
-    private int i_SEVolume = 50;//SE音量
+    public static float f_ItemTime = 10;        //アイテムの沸き間隔 
+    public static float f_AreaTime = 45;        //1つのエリアでの時間
+    public static float f_ChangeMoveTime = 15;  //エリア間の時間
+    public static int i_MobNumber = 20;         //沸くモブの数
+    private int i_BGMVolume = 50;               //BGM音量
+    private int i_SEVolume = 50;                //SE音量
 
 
-    private int settingSelect=1;
-    private int controlPlayerNum;//操作するプレイヤー
+    private int settingSelect=1;                //選択項目を表す
+    private int controlPlayerNum;                //操作するプレイヤー
 
-    private const float cursorMoveTime=0.1f;//カーソルが再移動可能になるまでの時間
-    private const float sliderMoveTime = 0.06f;//スライダーがスライド可能になるまでの時間
+    private const float cursorMoveTime=0.1f;    //カーソルが再移動可能になるまでの時間
+    private const float sliderMoveTime = 0.06f; //スライダーがスライド可能になるまでの時間
 
-    private bool selected;//その項目を選択
-    private bool slideCursor=true;//カーソルがスライド可能か
-    private bool slideSlider = true;//スライダーがスライド可能か
-    private bool isExecute;//コルーチンが実行中か
+    private bool selected;                      //その項目を選択
+    private bool slideCursor=true;              //カーソルがスライド可能か
+    private bool slideSlider = true;            //スライダーがスライド可能か
+    private bool isExecute;                     //コルーチンが実行中か
 
-    private RectTransform cursorRect;
+    private RectTransform cursorRect;           //カーソルのrect
+
+    //設定画面のオブジェクトのリスト
     private List<GameObject> SettingObj = new List<GameObject>();
+
+    public bool NowSetting { get; set; }        //現在設定画面にいるか
 
     public int I_BGMVolume
     {
@@ -58,8 +64,6 @@ public class SettingScene : MonoBehaviour {
         }
     }
 
-
-    public bool NowSetting { get; set; }//現在設定画面にいるか
 
     public enum SettingType
     {
@@ -91,8 +95,8 @@ public class SettingScene : MonoBehaviour {
     void Update() {
         for (int i = 1; i < 5; i++)
         {
-            if (Input.GetButtonDown("Setting"+i.ToString()))
-            {
+            if (!NowSetting&&Input.GetButtonDown("Setting"+i.ToString()))
+            {   //設定画面を開く
                 controlPlayerNum = i;
                 NowSetting = true;
                 settingText.SetActive(false);
@@ -102,23 +106,36 @@ public class SettingScene : MonoBehaviour {
                 }
             }
         }
-        if (NowSetting)
+        if (NowSetting)//設定画面を開いているか
         {
             TextUpdate();
             ChoiceSelection();
-            if (!selected)
+
+
+            //決定
+            if (!selected && Input.GetButtonDown("Fire" + controlPlayerNum.ToString()))
+            {
+                selected = true;
+                ItoE();
+            }
+            //選択解除
+            else if (selected && (Input.GetButtonDown("Jump" + controlPlayerNum.ToString()) || Input.GetButtonDown("Fire" + controlPlayerNum.ToString())))
+            {
+                selected = false;
+                settingType = SettingType.NOSELECT;
+            }
+            //設定画面を閉じる
+            else if (Input.GetButtonDown("Jump" + controlPlayerNum.ToString()))
+            {
+                BackSeting();
+            }
+
+
+            if (!selected)//項目を選択しているか
             {
                 settingType = SettingType.NOSELECT;
 
-                //決定
-                if (Input.GetButtonDown("Fire" + controlPlayerNum.ToString()))
-                {
-                    selected = true;
-                    ItoE();
-                }
-
                 //選択を上下に移動
-
                 if (Input.GetAxis("VerticalL" + controlPlayerNum.ToString()) >= 1&&slideCursor)
                 {
                     slideCursor = false;
@@ -131,6 +148,8 @@ public class SettingScene : MonoBehaviour {
                     StartCoroutine(CursorMoveTimeWait());
                     settingSelect++;
                 }
+
+                //選択をループさせる
                 if (settingSelect <= 0)
                 {
                     settingSelect = 7;
@@ -139,14 +158,9 @@ public class SettingScene : MonoBehaviour {
                 {
                     settingSelect = 1;
                 }
-
-                //設定画面を閉じる
-                if (Input.GetButtonDown("Jump" + controlPlayerNum.ToString()))
-                {
-                    BackSeting();
-                }
             }
-            if (selected)
+
+            if (selected)//項目を選択しているか
             {
                 SwitchSettingType();
             }
@@ -199,25 +213,26 @@ public class SettingScene : MonoBehaviour {
     /// </summary>
     void ChoiceSelection()
     {
-        if (settingType == SettingType.NOSELECT)
+        if (settingType == SettingType.NOSELECT)//何も選択していない
         {
             //「戻る」用処理
             if (settingSelect == 7)
             {
                 cursorRect.sizeDelta = new Vector2(100, 60);
-                cursorRect.position = new Vector3(50, 40, 0);
+                cursorRect.position = textRect[0].position;
             }
             //「戻る」以外
             else
             {
-                cursorRect.sizeDelta = new Vector2(260, 50);
-                cursorRect.position = new Vector3(230, 420 - (settingSelect * 60), 0);
+                cursorRect.sizeDelta = new Vector2(265, 50);
+                cursorRect.position = textRect[settingSelect].position;
             }
         }
-        else
+        else//何か選択した
         {
+            //スライダーにカーソルを合わせる
             cursorRect.sizeDelta = new Vector2(350, 50);
-            cursorRect.position = new Vector3(545, 420 - (settingSelect*60),0);
+            cursorRect.position = _slider[settingSelect-1].GetComponent<RectTransform>().position;
         }
 
     }
@@ -313,30 +328,17 @@ public class SettingScene : MonoBehaviour {
     /// <param name="slider">操作するスライダー</param>
     void SliderControl(Slider c_slider)
     {
-        for (int i = 1; i < 5; i++)
+        if (Input.GetAxis("HorizontalL" + controlPlayerNum.ToString()) > 0.6f && slideSlider)
         {
-            if (Input.GetAxis("HorizontalL" + i.ToString()) > 0.6f&&slideSlider)
-            {
-                slideSlider = false;
-                StartCoroutine(SliderMoveTimeWait());
-                c_slider.value++;
-            }
-            else if (Input.GetAxis("HorizontalL" + i.ToString()) < -0.6f&&slideSlider)
-            {
-                slideSlider = false;
-                StartCoroutine(SliderMoveTimeWait());
-                c_slider.value--;
-            }
+            slideSlider = false;
+            StartCoroutine(SliderMoveTimeWait());
+            c_slider.value++;
         }
-
-        //選択解除
-        for (int i = 1; i < 5; i++)
+        else if (Input.GetAxis("HorizontalL" + controlPlayerNum.ToString()) < -0.6f && slideSlider)
         {
-            if (Input.GetButtonDown("Jump" + i.ToString()))
-            {
-                selected = false;
-                settingType = SettingType.NOSELECT;
-            }
+            slideSlider = false;
+            StartCoroutine(SliderMoveTimeWait());
+            c_slider.value--;
         }
     }
 

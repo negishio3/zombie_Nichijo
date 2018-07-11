@@ -149,24 +149,24 @@ public class AreaSystem : MonoBehaviour
     /// <returns></returns>
     IEnumerator AreaEnumerator()
     {
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < SettingScene.i_AreaNumber; i++)
         {
             StartCoroutine(ItemCoroutine());
             timer = SettingScene.f_AreaTime + 1;
 
             flowtext.ChangeWave = true;
-            nowArea = i;                //アイテム処理で使用
+            nowArea = i%4;                //アイテム処理で使用
             yield return StartCoroutine(AreaStart(AreaObject[i].transform.position));
-            if (i < 3)
+            if (i < SettingScene.i_AreaNumber-1)
             {
                 yield return new WaitWhile(() => timer >= 10);
-                AreaObject[i + 1].SetActive(true);
+                AreaObject[(i%4) + 1].SetActive(true);
             }
             yield return new WaitWhile(() => timer >= 0);
 
-            AreaObject[i].SetActive(false);
+            AreaObject[i%4].SetActive(false);
             //次のwaveへ
-            if (i < 3)
+            if (i < SettingScene.i_AreaNumber-1)
             {
                 nowArea = i + 1;
                 AreaFinish(AreaObject[i + 1].transform.position);

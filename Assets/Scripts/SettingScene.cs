@@ -10,11 +10,11 @@ public class SettingScene : MonoBehaviour {
     //BGM、SEのAudioSourceのoutputにAudioMixerのBGMとSEを割り当てる
 
     [SerializeField]
-    private Slider[] _slider=new Slider[6];     //スライダー
+    private Slider[] _slider=new Slider[7];     //スライダー
     [SerializeField]
-    private Text[] _text = new Text[6];         //スライダーの値用
+    private Text[] _text = new Text[7];         //スライダーの値用
     [SerializeField]
-    private RectTransform[] textRect=new RectTransform[7];             //文のrecttransform
+    private RectTransform[] textRect=new RectTransform[8];             //文のrecttransform
     [SerializeField]
     private GameObject settingText;             //設定画面を開く誘導用text
     [SerializeField]
@@ -26,6 +26,7 @@ public class SettingScene : MonoBehaviour {
     public static float f_AreaTime = 45;        //1つのエリアでの時間
     public static float f_ChangeMoveTime = 15;  //エリア間の時間
     public static int i_MobNumber = 20;         //沸くモブの数
+    public static int i_AreaNumber = 4;         //エリアの数
     private int i_BGMVolume = 50;               //BGM音量
     private int i_SEVolume = 50;                //SE音量
 
@@ -72,6 +73,7 @@ public class SettingScene : MonoBehaviour {
         AREATIME,
         CHANGEMOVETIME,
         MOBNUMBER,
+        AREANUMBER,
         BGMVOLUME,
         SEVOLUME,
         BACK
@@ -152,9 +154,9 @@ public class SettingScene : MonoBehaviour {
                 //選択をループさせる
                 if (settingSelect <= 0)
                 {
-                    settingSelect = 7;
+                    settingSelect = 8;
                 }
-                else if (settingSelect >= 8)
+                else if (settingSelect >= 9)
                 {
                     settingSelect = 1;
                 }
@@ -216,7 +218,7 @@ public class SettingScene : MonoBehaviour {
         if (settingType == SettingType.NOSELECT)//何も選択していない
         {
             //「戻る」用処理
-            if (settingSelect == 7)
+            if (settingSelect == 8)
             {
                 cursorRect.sizeDelta = new Vector2(100, 60);
                 cursorRect.position = textRect[0].position;
@@ -264,12 +266,16 @@ public class SettingScene : MonoBehaviour {
                 SliderControl(_slider[3]);
                 break;
 
-            case SettingType.BGMVOLUME:
+            case SettingType.AREANUMBER:
                 SliderControl(_slider[4]);
                 break;
 
-            case SettingType.SEVOLUME:
+            case SettingType.BGMVOLUME:
                 SliderControl(_slider[5]);
+                break;
+
+            case SettingType.SEVOLUME:
+                SliderControl(_slider[6]);
                 break;
 
             case SettingType.BACK:
@@ -283,7 +289,7 @@ public class SettingScene : MonoBehaviour {
     /// </summary>
     void TextUpdate()
     {
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 7; i++)
         {
             _text[i].text = _slider[i].value.ToString();
         }
@@ -351,6 +357,7 @@ public class SettingScene : MonoBehaviour {
         f_AreaTime = 45;
         f_ChangeMoveTime = 15;
         i_MobNumber = 20;
+        i_AreaNumber = 4;
         I_BGMVolume = 50;
         I_SEVolume = 50;
     }
@@ -365,30 +372,34 @@ public class SettingScene : MonoBehaviour {
         _slider[1].onValueChanged.AddListener(S_AreaTime);
         _slider[2].onValueChanged.AddListener(S_ChangeMoveTime);
         _slider[3].onValueChanged.AddListener(S_MobNumber);
-        _slider[4].onValueChanged.AddListener(S_BGMVolume);
-        _slider[5].onValueChanged.AddListener(S_SEVolume);
+        _slider[4].onValueChanged.AddListener(S_AreaNumber);
+        _slider[5].onValueChanged.AddListener(S_BGMVolume);
+        _slider[6].onValueChanged.AddListener(S_SEVolume);
 
         _slider[0].maxValue = 60;
         _slider[1].maxValue = 90;
         _slider[2].maxValue = 20;
         _slider[3].maxValue = 50;
-        _slider[4].maxValue = 100;
+        _slider[4].maxValue = 20;
         _slider[5].maxValue = 100;
+        _slider[6].maxValue = 100;
 
 
         _slider[0].value = f_ItemTime;
         _slider[1].value = f_AreaTime;
         _slider[2].value = f_ChangeMoveTime;
         _slider[3].value = i_MobNumber;
-        _slider[4].value = I_BGMVolume;
-        _slider[5].value = I_SEVolume;
+        _slider[4].value = i_AreaNumber;
+        _slider[5].value = I_BGMVolume;
+        _slider[6].value = I_SEVolume;
 
         _slider[0].minValue = 5;
         _slider[1].minValue = 10;
         _slider[2].minValue = 3;
         _slider[3].minValue = 4;
-        _slider[4].minValue = 0;
+        _slider[4].minValue = 1;
         _slider[5].minValue = 0;
+        _slider[6].minValue = 0;
 
     }
 
@@ -413,6 +424,11 @@ public class SettingScene : MonoBehaviour {
     void S_MobNumber(float value)
     {
         i_MobNumber = (int)value;
+    }
+
+    void S_AreaNumber(float value)
+    {
+        i_AreaNumber = (int)value;
     }
 
     void S_BGMVolume(float value)

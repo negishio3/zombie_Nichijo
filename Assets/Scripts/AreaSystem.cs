@@ -228,15 +228,19 @@ public class AreaSystem : MonoBehaviour
         int item = 0;
         while (true)
         {
-            yield return new WaitForSeconds(SettingScene.f_ItemTime);
-            item = Random.Range(0, 2);
-            if (item == 0)
+            if (SettingScene.b_ItemFlg)
             {
-                ItemCreate(item);
-            }
-            else if (item == 1 && !GameObject.Find(Items[item].name))
-            {
-                ItemCreate(item);
+                //yield return new WaitForSeconds(SettingScene.f_ItemTime);
+                yield return new WaitForSeconds(10f);
+                item = Random.Range(0, 2);
+                if (item == 0)
+                {
+                    ItemCreate(item);
+                }
+                else if (item == 1 && !GameObject.Find(Items[item].name))
+                {
+                    ItemCreate(item);
+                }
             }
         }
     }

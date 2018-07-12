@@ -10,19 +10,22 @@ public class SettingScene : MonoBehaviour {
     //BGM、SEのAudioSourceのoutputにAudioMixerのBGMとSEを割り当てる
 
     [SerializeField]
-    private Slider[] _slider=new Slider[7];     //スライダー
+    private Slider[] _slider=new Slider[6];     //スライダー
     [SerializeField]
-    private Text[] _text = new Text[7];         //スライダーの値用
+    private Toggle _toggle;
+    [SerializeField]
+    private Text[] _text = new Text[7];         //値用
     [SerializeField]
     private RectTransform[] textRect=new RectTransform[8];             //文のrecttransform
-    [SerializeField]
-    private GameObject settingText;             //設定画面を開く誘導用text
     [SerializeField]
     private Image Cursor;                       //カーソルのイメージ
     [SerializeField]
     private AudioMixer audioMixer;              //オーディオミキサー
+    [SerializeField]
+    private GameObject[] enabledFalseObj;         //設定画面を開いたとき非表示にするUI
 
-    public static float f_ItemTime = 10;        //アイテムの沸き間隔 
+  //  public static float f_ItemTime = 10;        //アイテムの沸き間隔 
+    public static bool b_ItemFlg=true;          //アイテムのオンオフ
     public static float f_AreaTime = 45;        //1つのエリアでの時間
     public static float f_ChangeMoveTime = 15;  //エリア間の時間
     public static int i_MobNumber = 20;         //沸くモブの数
@@ -69,7 +72,8 @@ public class SettingScene : MonoBehaviour {
     public enum SettingType
     {
         NOSELECT,
-        ITEMTIME,
+        ITEMBOOL,
+        //ITEMTIME,
         AREATIME,
         CHANGEMOVETIME,
         MOBNUMBER,
@@ -84,7 +88,7 @@ public class SettingScene : MonoBehaviour {
 
 	void Start () {
         SettingReset();
-        SettingSlider();
+        SettingUI();
         cursorRect = Cursor.GetComponent<RectTransform>();
         foreach (Transform obj in gameObject.transform)
         {
@@ -101,10 +105,13 @@ public class SettingScene : MonoBehaviour {
             {   //設定画面を開く
                 controlPlayerNum = i;
                 NowSetting = true;
-                settingText.SetActive(false);
                 foreach (GameObject obj in SettingObj)
                 {
                     obj.SetActive(true);
+                }
+                foreach(GameObject obj in enabledFalseObj)
+                {
+                    obj.SetActive(false);
                 }
             }
         }
@@ -115,19 +122,19 @@ public class SettingScene : MonoBehaviour {
 
 
             //決定
-            if (!selected && Input.GetButtonDown("Fire" + controlPlayerNum.ToString()))
+            if (!selected && Input.GetButtonUp("Fire" + controlPlayerNum.ToString()))
             {
                 selected = true;
                 ItoE();
             }
             //選択解除
-            else if (selected && (Input.GetButtonDown("Jump" + controlPlayerNum.ToString()) || Input.GetButtonDown("Fire" + controlPlayerNum.ToString())))
+            else if (selected && (Input.GetButtonUp("Jump" + controlPlayerNum.ToString()) || (Input.GetButtonUp("Fire" + controlPlayerNum.ToString()))&&settingType!=SettingType.ITEMBOOL&&selected))
             {
                 selected = false;
                 settingType = SettingType.NOSELECT;
             }
             //設定画面を閉じる
-            else if (Input.GetButtonDown("Jump" + controlPlayerNum.ToString()))
+            else if (Input.GetButtonUp("Jump" + controlPlayerNum.ToString()))
             {
                 BackSeting();
             }
@@ -230,11 +237,16 @@ public class SettingScene : MonoBehaviour {
                 cursorRect.position = textRect[settingSelect].position;
             }
         }
+        else if (settingType == SettingType.ITEMBOOL)
+        {
+            cursorRect.sizeDelta = new Vector2(40, 40);
+            cursorRect.position = _toggle.GetComponent<RectTransform>().position;
+        }
         else//何か選択した
         {
             //スライダーにカーソルを合わせる
             cursorRect.sizeDelta = new Vector2(350, 50);
-            cursorRect.position = _slider[settingSelect-1].GetComponent<RectTransform>().position;
+            cursorRect.position = _slider[settingSelect-2].GetComponent<RectTransform>().position;
         }
 
     }
@@ -250,32 +262,36 @@ public class SettingScene : MonoBehaviour {
             case SettingType.NOSELECT:
                 break;
 
-            case SettingType.ITEMTIME:
-                SliderControl(_slider[0]);
+            //case SettingType.ITEMTIME:
+            //    SliderControl(_slider[0]);
+            //    break;
+
+            case SettingType.ITEMBOOL:
+                ToggleControll(_toggle);
                 break;
 
             case SettingType.AREATIME:
-                SliderControl(_slider[1]);
+                SliderControl(_slider[0]);
                 break;
 
             case SettingType.CHANGEMOVETIME:
-                SliderControl(_slider[2]);
+                SliderControl(_slider[1]);
                 break;
 
             case SettingType.MOBNUMBER:
-                SliderControl(_slider[3]);
+                SliderControl(_slider[2]);
                 break;
 
             case SettingType.AREANUMBER:
-                SliderControl(_slider[4]);
+                SliderControl(_slider[3]);
                 break;
 
             case SettingType.BGMVOLUME:
-                SliderControl(_slider[5]);
+                SliderControl(_slider[4]);
                 break;
 
             case SettingType.SEVOLUME:
-                SliderControl(_slider[6]);
+                SliderControl(_slider[5]);
                 break;
 
             case SettingType.BACK:
@@ -289,9 +305,17 @@ public class SettingScene : MonoBehaviour {
     /// </summary>
     void TextUpdate()
     {
-        for (int i = 0; i < 7; i++)
+        if (_toggle.isOn)
         {
-            _text[i].text = _slider[i].value.ToString();
+            _text[0].text = "On";
+        }
+        else
+        {
+            _text[0].text = "Off";
+        }
+        for (int i = 0; i < 6; i++)
+        {
+            _text[i+1].text = _slider[i].value.ToString();
         }
     }
 
@@ -320,12 +344,15 @@ public class SettingScene : MonoBehaviour {
         {
             obj.SetActive(false);
         }
+        foreach (GameObject obj in enabledFalseObj)
+        {
+            obj.SetActive(true);
+        }
         settingSelect = 1;
         settingType = SettingType.NOSELECT;
         slideCursor = true;
         selected = false;
         NowSetting = false;
-        settingText.SetActive(true);
     }
 
     /// <summary>
@@ -349,11 +376,37 @@ public class SettingScene : MonoBehaviour {
     }
 
     /// <summary>
+    /// トグル操作メソッド
+    /// </summary>
+    /// <param name="b_toggle"></param>
+    void ToggleControll(Toggle b_toggle)
+    {
+        //true,false切り替え
+        if (Input.GetButtonDown("Fire" + controlPlayerNum.ToString()))
+        {
+            if (_toggle.isOn)
+            {
+                _toggle.isOn = false;
+            }
+            else if (!_toggle.isOn)
+            {
+                _toggle.isOn = true;
+            }
+        }
+        else if (Input.GetButtonUp("Jump" + controlPlayerNum.ToString()))
+        {
+            selected = false;
+            settingType = SettingType.NOSELECT;
+        }
+    }
+
+    /// <summary>
     /// 設定初期化
     /// </summary>
     void SettingReset()
     {
-        f_ItemTime = 10;
+        // f_ItemTime = 10;
+        b_ItemFlg = true;
         f_AreaTime = 45;
         f_ChangeMoveTime = 15;
         i_MobNumber = 20;
@@ -364,51 +417,58 @@ public class SettingScene : MonoBehaviour {
 
 
     /// <summary>
-    /// スライダー初期設定用
+    /// 初期設定用
     /// </summary>
-    void SettingSlider()
+    void SettingUI()
     {
-        _slider[0].onValueChanged.AddListener(S_ItemTime);
-        _slider[1].onValueChanged.AddListener(S_AreaTime);
-        _slider[2].onValueChanged.AddListener(S_ChangeMoveTime);
-        _slider[3].onValueChanged.AddListener(S_MobNumber);
-        _slider[4].onValueChanged.AddListener(S_AreaNumber);
-        _slider[5].onValueChanged.AddListener(S_BGMVolume);
-        _slider[6].onValueChanged.AddListener(S_SEVolume);
+        //_slider[0].onValueChanged.AddListener(S_ItemTime);
+        _toggle.onValueChanged.AddListener(T_ItemFlg);
+        _slider[0].onValueChanged.AddListener(S_AreaTime);
+        _slider[1].onValueChanged.AddListener(S_ChangeMoveTime);
+        _slider[2].onValueChanged.AddListener(S_MobNumber);
+        _slider[3].onValueChanged.AddListener(S_AreaNumber);
+        _slider[4].onValueChanged.AddListener(S_BGMVolume);
+        _slider[5].onValueChanged.AddListener(S_SEVolume);
 
-        _slider[0].maxValue = 60;
-        _slider[1].maxValue = 90;
-        _slider[2].maxValue = 20;
-        _slider[3].maxValue = 50;
-        _slider[4].maxValue = 20;
+       // _slider[0].maxValue = 60;
+        _slider[0].maxValue = 90;
+        _slider[1].maxValue = 20;
+        _slider[2].maxValue = 50;
+        _slider[3].maxValue = 20;
+        _slider[4].maxValue = 100;
         _slider[5].maxValue = 100;
-        _slider[6].maxValue = 100;
 
 
-        _slider[0].value = f_ItemTime;
-        _slider[1].value = f_AreaTime;
-        _slider[2].value = f_ChangeMoveTime;
-        _slider[3].value = i_MobNumber;
-        _slider[4].value = i_AreaNumber;
-        _slider[5].value = I_BGMVolume;
-        _slider[6].value = I_SEVolume;
+        //_slider[0].value = f_ItemTime;
+        _toggle.isOn = true;
+        _slider[0].value = f_AreaTime;
+        _slider[1].value = f_ChangeMoveTime;
+        _slider[2].value = i_MobNumber;
+        _slider[3].value = i_AreaNumber;
+        _slider[4].value = I_BGMVolume;
+        _slider[5].value = I_SEVolume;
 
-        _slider[0].minValue = 5;
-        _slider[1].minValue = 10;
-        _slider[2].minValue = 3;
-        _slider[3].minValue = 4;
-        _slider[4].minValue = 1;
+       // _slider[0].minValue = 5;
+        _slider[0].minValue = 10;
+        _slider[1].minValue = 3;
+        _slider[2].minValue = 4;
+        _slider[3].minValue = 1;
+        _slider[4].minValue = 0;
         _slider[5].minValue = 0;
-        _slider[6].minValue = 0;
 
     }
 
 
-    //以下スライダーアタッチ用
+    //以下アタッチ用
 
-    void S_ItemTime(float value)
+    //void S_ItemTime(float value)
+    //{
+    //    f_ItemTime = value;
+    //}
+
+    void T_ItemFlg(bool value)
     {
-        f_ItemTime = value;
+        b_ItemFlg = value;
     }
 
     void S_AreaTime(float value)

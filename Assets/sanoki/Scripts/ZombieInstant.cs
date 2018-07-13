@@ -24,23 +24,22 @@ public class ZombieInstant : MonoBehaviour {
     public int[] playerID= { 0, 1, 2, 3 };
     public int Count;
     public bool ParticlePlay;
+    public bool isRanking = false;
 
     private void Start()
     {
+        isRanking = true;
          col=zombiePre[0].GetComponent<BoxCollider>();//ボックスコライダーを取得
     }
     void Update () {
-        //if (Input.GetKeyDown(KeyCode.D)) Instans(scores);
+        if (Input.GetKeyDown(KeyCode.D)) Instans(scores);
         if (!SceneFader_sanoki.isFade && Count == 0 && MobChangeSystem.scoreCount[0] > 0)
         {
             Instans(MobChangeSystem.scoreCount);
         }
-        for (int i = 1; i < 5; i++)
+        if (!isRanking &&Input.anyKeyDown)
         {
-            if (Input.GetButtonDown("Start" + i.ToString()))
-            {
-                GameObject.Find("Canvas").GetComponent<SceneFader_sanoki>().StageSelect("Title");
-            }
+            GameObject.Find("Canvas").GetComponent<SceneFader_sanoki>().StageSelect("Title");
         }
     }
     string autTagCnange(int preID)
@@ -103,8 +102,9 @@ public class ZombieInstant : MonoBehaviour {
         if (SortArray(score,playerID,false)[0]!= SortArray(score, playerID, false)[1])
         {
             ParticleSwitch();
-            crowns[SortArray(score, playerID, true)[0]].SetActive(true);
             Invoke("ParticleSwitch", 1.0f);
+            crowns[SortArray(score, playerID, true)[0]].SetActive(true);
+            FindObjectOfType<ResultCam_sanoki>().camMove(SortArray(score, playerID, true)[0]);
         }
         else if(SortArray(score, playerID, false)[0] == SortArray(score, playerID, false)[1])
         {
@@ -113,6 +113,7 @@ public class ZombieInstant : MonoBehaviour {
                 drawTexts[SortArray(score, playerID, true)[i]].text = SortArray(score, playerID, false)[i].ToString();
             }
             drawImage.SetActive(true);
+            isRanking = false;
         }
 
     }

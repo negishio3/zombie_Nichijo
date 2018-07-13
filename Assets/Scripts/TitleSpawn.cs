@@ -37,6 +37,10 @@ public class TitleSpawn : MonoBehaviour {
             {
                 GameObject.Find("Canvas").GetComponent<SceneFader_sanoki>().StageSelect(sceneName);
             }
+            else if (Input.anyKeyDown)
+            {
+                GameObject.Find("Canvas").GetComponent<SceneFader_sanoki>().StageSelect(sceneName);
+            }
         }
     }
     Quaternion RandomQua()

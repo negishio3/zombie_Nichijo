@@ -13,14 +13,19 @@ public class SettingScene : MonoBehaviour {
     private Slider[] _slider=new Slider[6];     //スライダー
     [SerializeField]
     private Toggle _toggle;
+
     [SerializeField]
     private Text[] _text = new Text[7];         //値用
+
     [SerializeField]
     private RectTransform[] textRect=new RectTransform[8];             //文のrecttransform
+
     [SerializeField]
     private Image Cursor;                       //カーソルのイメージ
+
     [SerializeField]
     private AudioMixer audioMixer;              //オーディオミキサー
+
     [SerializeField]
     private GameObject[] enabledFalseObj;         //設定画面を開いたとき非表示にするUI
 
@@ -431,7 +436,7 @@ public class SettingScene : MonoBehaviour {
         _slider[5].onValueChanged.AddListener(S_SEVolume);
 
        // _slider[0].maxValue = 60;
-        _slider[0].maxValue = 90;
+        _slider[0].maxValue = 60;
         _slider[1].maxValue = 20;
         _slider[2].maxValue = 50;
         _slider[3].maxValue = 20;
@@ -449,7 +454,7 @@ public class SettingScene : MonoBehaviour {
         _slider[5].value = I_SEVolume;
 
        // _slider[0].minValue = 5;
-        _slider[0].minValue = 10;
+        _slider[0].minValue = 20;
         _slider[1].minValue = 3;
         _slider[2].minValue = 4;
         _slider[3].minValue = 1;
